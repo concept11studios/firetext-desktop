@@ -10,6 +10,7 @@ Basic Pitch Detection
 
 const axios = require('axios')
 const { v4: uuidv4 } = require('uuid');
+const _ = require('underscore')
 
 const model_url =
   'https://cdn.jsdelivr.net/gh/ml5js/ml5-data-and-models/models/pitch-detection/crepe/';
@@ -18,9 +19,17 @@ let audioContext;
 let mic;
 let pitch;
 let shouldRecord = true;
+let departments = []
+getDepartments()
 
+async function getDepartments() {
+  let getDepartmentsResponse = await axios.get('http://localhost:5000/api/departments/all', {})
+  if (getDepartmentsResponse.data.success) {
+    departments = getDepartmentsResponse.data.departments
+  } 
+}
 
-function setup() {
+function setup() { 
   audioContext = new AudioContext();
   mic = new p5.AudioIn();
   mic.start(startPitch);
@@ -90,19 +99,31 @@ function getPitch() {
   pitch.getPitch(function(err, frequency) {
     // should record ensures that the startRecording function is only triggered once.
     if (frequency) {
-        if (frequency >= 585 && frequency <= 589) {
-            select('#result').html('Concept 11 FD');
-            if (shouldRecord) {
-              startrecording()
-            }
-        } else if (frequency >= 1155 && frequency <= 1162) {
-            select('#result').html('FireTEXT FD');
-            if (shouldRecord) {
-              startrecording()
-            }
-        } else {
-            select('#result').html(Math.round(frequency));
+      // step 1, get the triggered department from the first tone that matches the current frequency
+      let triggeredDepartment = _.find(departments, (department) => {
+        let toneOne = department.tones[0]
+        if (toneOne) {
+          let varianceHigh = toneOne.value + toneOne.variance
+          let varianceLow = toneOne.value - toneOne.variance
+          return (frequency <= varianceHigh) && (frequency >= varianceLow)
         }
+      })
+      // step 2 send the dispatch if one tone is set, otherwise test the other conditions.
+      if (triggeredDepartment) {
+        select('#result').html(triggeredDepartment.name);
+        let toneTwo = triggeredDepartment.tones[1]
+        if (toneTwo) {
+          let varianceHigh = toneTwo.value + toneTwo.variance
+          let varianceLow = toneTwo.value - toneTwo.variance
+          if ((frequency <= varianceHigh) && (frequency >= varianceLow)) {
+            // trigger dispatch
+          }
+        } else {
+          // trigger dispatch
+        }
+      } else {
+        select('#result').html(frequency);
+      }
     } else {
       select('#result').html('');
     }

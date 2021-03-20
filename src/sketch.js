@@ -116,10 +116,10 @@ function getPitch() {
           let varianceHigh = toneTwo.value + toneTwo.variance
           let varianceLow = toneTwo.value - toneTwo.variance
           if ((frequency <= varianceHigh) && (frequency >= varianceLow)) {
-            // trigger dispatch
+            startrecording()
           }
         } else {
-          // trigger dispatch
+          startrecording()
         }
       } else {
         select('#result').html(frequency);

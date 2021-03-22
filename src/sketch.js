@@ -10,7 +10,6 @@ Basic Pitch Detection
 
 const axios = require('axios')
 const { v4: uuidv4 } = require('uuid');
-const _ = require('underscore')
 
 const model_url =
   'https://cdn.jsdelivr.net/gh/ml5js/ml5-data-and-models/models/pitch-detection/crepe/';
@@ -19,17 +18,9 @@ let audioContext;
 let mic;
 let pitch;
 let shouldRecord = true;
-let departments = []
-getDepartments()
 
-async function getDepartments() {
-  let getDepartmentsResponse = await axios.get('http://localhost:5000/api/departments/all', {})
-  if (getDepartmentsResponse.data.success) {
-    departments = getDepartmentsResponse.data.departments
-  } 
-}
 
-function setup() { 
+function setup() {
   audioContext = new AudioContext();
   mic = new p5.AudioIn();
   mic.start(startPitch);
@@ -73,7 +64,9 @@ function stoprecording(){
     recorder = false
     const chunks = []
     chunks.push(event.data);
-    let blob = new Blob(chunks)
+    let blob = new Blob(chunks, {
+      type: 'audio/mpeg'
+    })
     let src = URL.createObjectURL(blob)
     document.querySelector('#audioFile').src = src
 
@@ -87,11 +80,11 @@ async function sendAudioDispatch (blob) {
   console.log({blob})
   let formData = new FormData()
   const dispatchInformation = {
-    departmentId: '5ffbbcc3a637ac4c537455c2',
+    departmentId: '60563d48b6ae23702b8e7a61',
   }
   formData.append('mp3File', blob)
   formData.append('dispatchInformation', JSON.stringify(dispatchInformation))
-  let postDispatchResponse = await axios.post('http://54.163.135.65/api/dispatches', formData, {})
+  let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData, {})
   console.log({ postDispatchResponse })
 }
 
@@ -99,31 +92,19 @@ function getPitch() {
   pitch.getPitch(function(err, frequency) {
     // should record ensures that the startRecording function is only triggered once.
     if (frequency) {
-      // step 1, get the triggered department from the first tone that matches the current frequency
-      let triggeredDepartment = _.find(departments, (department) => {
-        let toneOne = department.tones[0]
-        if (toneOne) {
-          let varianceHigh = toneOne.value + toneOne.variance
-          let varianceLow = toneOne.value - toneOne.variance
-          return (frequency <= varianceHigh) && (frequency >= varianceLow)
-        }
-      })
-      // step 2 send the dispatch if one tone is set, otherwise test the other conditions.
-      if (triggeredDepartment) {
-        select('#result').html(triggeredDepartment.name);
-        let toneTwo = triggeredDepartment.tones[1]
-        if (toneTwo) {
-          let varianceHigh = toneTwo.value + toneTwo.variance
-          let varianceLow = toneTwo.value - toneTwo.variance
-          if ((frequency <= varianceHigh) && (frequency >= varianceLow)) {
-            startrecording()
-          }
+        if (frequency >= 585 && frequency <= 589) {
+            select('#result').html('Concept 11 FD');
+            if (shouldRecord) {
+              startrecording()
+            }
+        } else if (frequency >= 1155 && frequency <= 1162) {
+            select('#result').html('FireTEXT FD');
+            if (shouldRecord) {
+              startrecording()
+            }
         } else {
-          startrecording()
+            select('#result').html(Math.round(frequency));
         }
-      } else {
-        select('#result').html(frequency);
-      }
     } else {
       select('#result').html('');
     }

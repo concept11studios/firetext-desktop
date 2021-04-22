@@ -23,7 +23,7 @@ let departments = []
 getDepartments()
 
 async function getDepartments() {
-  let getDepartmentsResponse = await axios.get('http://localhost:5000/api/departments/all', {})
+  let getDepartmentsResponse = await axios.get('https://console.firetext.net/api/departments/all', {})
   if (getDepartmentsResponse.data.success) {
     departments = getDepartmentsResponse.data.departments
   }
@@ -92,7 +92,7 @@ async function sendAudioDispatch (blob) {
   }
   formData.append('mp3File', blob)
   formData.append('dispatchInformation', JSON.stringify(dispatchInformation))
-  let postDispatchResponse = await axios.post('http://localhost:5000/api/dispatches', formData, {})
+  let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData, {})
   console.log({ postDispatchResponse })
 }
 

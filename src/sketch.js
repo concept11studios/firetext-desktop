@@ -13,7 +13,7 @@ const { v4: uuidv4 } = require('uuid');
 const _ = require('underscore')
 
 const model_url =
-  'https://cdn.jsdelivr.net/gh/ml5js/ml5-data-and-models/models/pitch-detection/crepe/';
+  './model';
 
 let audioContext;
 let mic;

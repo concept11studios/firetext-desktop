@@ -18,7 +18,6 @@ const model_url =
 let audioContext;
 let mic;
 let pitch;
-let shouldRecord = true;
 let departments = []
 
 let triggeredDepartment
@@ -30,7 +29,7 @@ async function getDepartments() {
   if (getDepartmentsResponse.data.success) {
     departments = getDepartmentsResponse.data.departments
   }
-  console.log(departments)
+  console.log({departments})
 }
 
 function setup() { 
@@ -53,27 +52,33 @@ function modelLoaded() {
 }
 
 var recorder=false;
+var isRunning = false
 
 function startrecording(){
-  shouldRecord = false
-  navigator.getUserMedia({ audio: true, video: false }, (stream) => {
-    recorder = new MediaRecorder(stream)
-    recorder.start();
-
-    setTimeout(() => {
-      stoprecording()
-    }, 10000)
-
-  }, handleError)
+  if (!isRunning) {
+    isRunning = true
+    navigator.getUserMedia({ audio: true, video: false }, (stream) => {
+      recorder = new MediaRecorder(stream)
+      if (recorder.state === 'inactive'){
+        recorder.start();
   
-  // triggers if there is an error getting the audio input
-  function handleError(err) {
-    alert(err)
+        // currently only records for 10 seconds, refactor this to 30 seconds
+        setTimeout(() => {
+          stoprecording()
+          isRunning = false
+        }, 10000)
+      }
+    }, handleError)
+    
+    // triggers if there is an error getting the audio input
+    function handleError(err) {
+      alert(err)
+    }
   }
 }
 
 function stoprecording(){
-  recorder.ondataavailable = function(event) {
+  recorder.ondataavailable = async function(event) {
     recorder = false
     const chunks = []
     chunks.push(event.data);
@@ -81,22 +86,28 @@ function stoprecording(){
     let src = URL.createObjectURL(blob)
     document.querySelector('#audioFile').src = src
 
-    sendAudioDispatch(blob)
+    await sendAudioDispatch(blob)
     triggeredDepartment = null
   };
-  recorder.stop();
-  shouldRecord = true
+  if (recorder && recorder.state !== 'inactive') {
+    recorder.stop();
+  }
 }
 
 async function sendAudioDispatch (blob) {
-  console.log({blob})
+  console.log({triggeredDepartment})
   let formData = new FormData()
   const dispatchInformation = {
-    departmentId: '5ffbbcc3a637ac4c537455c2',
+    departmentId: triggeredDepartment._id,
   }
   formData.append('mp3File', blob)
   formData.append('dispatchInformation', JSON.stringify(dispatchInformation))
-  let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData, {})
+  const config = {
+    params: {
+      type: triggeredDepartment.type === 'All Call' ? 'allCall' : ''
+    }
+  }
+  let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData, config)
   console.log({ postDispatchResponse })
 }
 
@@ -118,7 +129,7 @@ function getPitch() {
       }
 
       // step 2 send the dispatch if one tone is set, otherwise test the other conditions.
-      if (triggeredDepartment) {
+      if (triggeredDepartment && recorder.state !== 'recording') {
         select('#result').html(triggeredDepartment.name);
         let toneTwo = triggeredDepartment.tones[1]
         if (toneTwo) {
@@ -129,9 +140,13 @@ function getPitch() {
             startrecording()
           }
         } else {
+          // start the recording after one tone is detected
           startrecording()
         }
-      } else {
+      } else if (triggeredDepartment && recorder.state === 'recording') {
+        select('#result').html(triggeredDepartment.name);
+      }
+      else {
         select('#result').html(frequency.toFixed(2));
       }
     } else {

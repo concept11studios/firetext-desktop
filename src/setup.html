@@ -1,0 +1,78 @@
+
+<meta charset="UTF-8">
+
+<title>FirePITCH</title>
+
+<div
+style="display: flex; flex-direction: column;"
+id = 'input-container'
+>
+
+    <a 
+    href="index.html"
+    > 
+        Home 
+    </a>
+
+    <div
+    style = "display: flex; justify-content: space-between;"
+    >
+        <button
+        style = "margin: 20px 0 20px 4px;"
+        onclick = "addInput()"
+        >
+            ADD API KEY
+        </button>
+        <button
+        style = "margin: 20px 0 20px 4px;"
+        onclick = "submit()"
+        >
+            ADD DEPARTMENTS
+        </button>
+    </div>
+
+    <script>
+        const axios = require('axios')
+
+        let inputs = []
+        let inputContainer = document.getElementById('input-container')
+
+        function deleteInput(index){
+            let collection = document.getElementsByClassName(index)
+            let elements = Array.from(collection)
+            elements.forEach(element => {
+                element.parentNode.removeChild(element)
+            })
+        }
+
+        function addInput() {
+            let div = document.createElement('div')
+            div.style = "display: flex; margin: 4px; flex: 1;"
+            div.innerHTML =  
+                `<input
+                style = "width:400px"
+                class = "${inputs.length}"
+                placeholder = 'Enter audio API token'
+                className = 'APIInput'
+                />
+                <button
+                class = "${inputs.length}"
+                onclick="deleteInput(${inputs.length})"
+                >
+                    Delete
+                </button>`
+            inputContainer.appendChild(div)
+            inputs.push(div)
+        }
+
+        function submit() {
+            // get the values of all the inputs
+            let apiTokens = inputs.map(div => {
+                return Array.from(div.getElementsByTagName('input'))[0].value
+            })
+            
+        }
+
+    </script>
+
+</div>

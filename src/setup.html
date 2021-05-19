@@ -95,7 +95,7 @@ id = 'input-container'
 
             let queryString = apiKeys.map((token, index) => `apiKeys[${index}]=${token}`).join('&')
 
-            let getDepartmentsByTokenResponse = await axios.get(`http://localhost:5000/api/departments/getByApiTokens?${queryString}`)
+            let getDepartmentsByTokenResponse = await axios.get(`https://console.firetext.net/api/departments/getByApiTokens?${queryString}`)
             console.log({getDepartmentsByTokenResponse})
 
             if (getDepartmentsByTokenResponse.data.success) {

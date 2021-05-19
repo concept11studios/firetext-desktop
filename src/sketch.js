@@ -25,11 +25,17 @@ let triggeredDepartment
 getDepartments()
 
 async function getDepartments() {
-  let getDepartmentsResponse = await axios.get('https://console.firetext.net/api/departments/all', {})
-  if (getDepartmentsResponse.data.success) {
-    departments = getDepartmentsResponse.data.departments
+  // let getDepartmentsResponse = await axios.get('https://console.firetext.net/api/departments/all', {})
+  // if (getDepartmentsResponse.data.success) {
+  //   departments = getDepartmentsResponse.data.departments
+  // }
+  // console.log({departments})
+  let lsDepartments = localStorage.getItem('departments')
+
+  if (lsDepartments) {
+    departments = JSON.parse(lsDepartments)
+    console.log(departments)
   }
-  console.log({departments})
 }
 
 function setup() { 

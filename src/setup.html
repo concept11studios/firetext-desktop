@@ -33,9 +33,24 @@ id = 'input-container'
 
     <script>
         const axios = require('axios')
+        const _ = require('underscore')
 
         let inputs = []
         let inputContainer = document.getElementById('input-container')
+        let inputValues = []
+
+        async function getDepartmentsFromLocalStorage() {
+            let savedDepartments = localStorage.getItem('departments')
+
+            if (savedDepartments) {
+                let departmentsJSON = JSON.parse(savedDepartments)
+                departmentsJSON.forEach(dept => {
+                    addInput(dept.apiKey)
+                })
+            }
+        }
+
+        getDepartmentsFromLocalStorage()
 
         function deleteInput(index){
             let collection = document.getElementsByClassName(index)
@@ -45,15 +60,18 @@ id = 'input-container'
             })
         }
 
-        function addInput() {
+        function addInput(inputValue) {
+            console.log(inputValue)
             let div = document.createElement('div')
             div.style = "display: flex; margin: 4px; flex: 1;"
+            div.id = `div${inputs.length}`
             div.innerHTML =  
                 `<input
                 style = "width:400px"
                 class = "${inputs.length}"
                 placeholder = 'Enter audio API token'
                 className = 'APIInput'
+                value = "${inputValue}"
                 />
                 <button
                 class = "${inputs.length}"
@@ -65,14 +83,38 @@ id = 'input-container'
             inputs.push(div)
         }
 
-        function submit() {
+        async function submit() {
             // get the values of all the inputs
-            let apiTokens = inputs.map(div => {
-                return Array.from(div.getElementsByTagName('input'))[0].value
+            let referenceToInputs = inputs.map(div => {
+                return Array.from(div.getElementsByTagName('input'))[0]
             })
-            
-        }
 
+            let apiKeys = referenceToInputs.map(ref => {
+                return ref.value
+            })
+
+            let queryString = apiKeys.map((token, index) => `apiKeys[${index}]=${token}`).join('&')
+
+            let getDepartmentsByTokenResponse = await axios.get(`http://localhost:5000/api/departments/getByApiTokens?${queryString}`)
+            console.log({getDepartmentsByTokenResponse})
+
+            if (getDepartmentsByTokenResponse.data.success) {
+                let departments = getDepartmentsByTokenResponse.data.departments
+                let departmentsString = departments.map(department => department.name).join(', ')
+                alert(`Successfully added ${departmentsString} to this audio device`)
+                localStorage.setItem('departments', JSON.stringify(departments))
+            } else {
+                let errors = getDepartmentsByTokenResponse.data.errors
+                errors.forEach(error => {
+                    // get the input with the same index as the error
+                    let errorInput = _.find(referenceToInputs, (ref, index) => {
+                        return index === error.index
+                    })
+                    errorInput.style.color = 'red'
+                    alert('Inputs with red text are using invalid API keys. Fix any errors and try again.')
+                })
+            }
+        }
     </script>
 
 </div>

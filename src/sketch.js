@@ -21,6 +21,7 @@ let pitch;
 let departments = []
 
 let triggeredDepartment
+let triggeredDepartments = []
 
 getDepartments()
 
@@ -122,9 +123,9 @@ function getPitch() {
     // should record ensures that the startRecording function is only triggered once.
     if (frequency) {
       // step 1, get the triggered department from the first tone that matches the current frequency
-      if (!triggeredDepartment) {
+      if (triggeredDepartments.length === 0) {
         // set the triggered department as a global variable so it stays as triggered while the listending for the second tone
-        triggeredDepartment = _.find(departments, (department) => {
+        triggeredDepartments = _.filter(departments, (department) => {
           let toneOne = department.tones[0]
           if (toneOne && !triggeredDepartment) {
             let variance1High = parseFloat(toneOne.value) + parseFloat(toneOne.variance)
@@ -132,6 +133,7 @@ function getPitch() {
             return (frequency <= variance1High) && (frequency >= variance1Low)
           }
         })
+        console.log(triggeredDepartments)
       }
 
       // step 2 send the dispatch if one tone is set, otherwise test the other conditions.

@@ -8,7 +8,7 @@ const createWindow = () => {
       nodeIntegration: true,
       enableRemoteModule: true,
     },
-    icon: __dirname + 'icon.ico'
+    // icon: __dirname + 'icon.ico'
   });
 
   mainWindow.maximize()

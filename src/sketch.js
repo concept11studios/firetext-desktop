@@ -73,7 +73,7 @@ function startrecording(){
         setTimeout(() => {
           stoprecording()
           isRunning = false
-        }, 10000)
+        }, 30000)
       }
     }, handleError)
     

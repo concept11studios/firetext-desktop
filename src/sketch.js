@@ -62,7 +62,8 @@ var recorder=false;
 var isRunning = false
 
 function startrecording(){
-  if (!isRunning) {
+  if (!isRunning && triggeredDepartment) {
+    console.log('recording')
     isRunning = true
     navigator.getUserMedia({ audio: true, video: false }, (stream) => {
       recorder = new MediaRecorder(stream)
@@ -95,6 +96,7 @@ function stoprecording(){
 
     await sendAudioDispatch(blob)
     triggeredDepartment = null
+    triggeredDepartments = []
   };
   if (recorder && recorder.state !== 'inactive') {
     recorder.stop();
@@ -102,7 +104,6 @@ function stoprecording(){
 }
 
 async function sendAudioDispatch (blob) {
-  console.log({triggeredDepartment})
   let formData = new FormData()
   const dispatchInformation = {
     departmentId: triggeredDepartment._id,
@@ -121,7 +122,7 @@ async function sendAudioDispatch (blob) {
 function getPitch() {
   pitch.getPitch(function(err, frequency) {
     // should record ensures that the startRecording function is only triggered once.
-    if (frequency) {
+    if (frequency && !triggeredDepartment) {
       // step 1, get the triggered department from the first tone that matches the current frequency
       if (triggeredDepartments.length === 0) {
         // set the triggered department as a global variable so it stays as triggered while the listending for the second tone
@@ -133,26 +134,29 @@ function getPitch() {
             return (frequency <= variance1High) && (frequency >= variance1Low)
           }
         })
-        console.log(triggeredDepartments)
       }
 
       // step 2 send the dispatch if one tone is set, otherwise test the other conditions.
-      if (triggeredDepartment && recorder.state !== 'recording') {
-        select('#result').html(triggeredDepartment.name);
-        let toneTwo = triggeredDepartment.tones[1]
-        if (toneTwo) {
-          let variance2High = parseFloat(toneTwo.value) + parseFloat(toneTwo.variance)
-          let variance2Low = parseFloat(toneTwo.value) - parseFloat(toneTwo.variance)
-          console.log(variance2High, variance2Low, frequency)
-          if ((frequency <= variance2High) && (frequency >= variance2Low)) {
+      if (triggeredDepartments.length > 0 && recorder.state !== 'recording') {
+        triggeredDepartments.forEach(triggeredDept => {
+          let toneTwo = triggeredDept.tones[1]
+          if (toneTwo) {
+            let variance2High = parseFloat(toneTwo.value) + parseFloat(toneTwo.variance)
+            let variance2Low = parseFloat(toneTwo.value) - parseFloat(toneTwo.variance)
+            if ((frequency <= variance2High) && (frequency >= variance2Low)) {
+              triggeredDepartment = triggeredDept
+              select('#result').html(triggeredDepartment.name);
+              startrecording()
+            }
+          } else {
+            // start the recording after one tone is detected
+            triggeredDepartment = triggeredDepartments.find((dept, index) => {
+              return index === 0
+            })
+            select('#result').html(triggeredDepartment.name);
             startrecording()
           }
-        } else {
-          // start the recording after one tone is detected
-          startrecording()
-        }
-      } else if (triggeredDepartment && recorder.state === 'recording') {
-        select('#result').html(triggeredDepartment.name);
+        })
       }
       else {
         select('#result').html(frequency.toFixed(2));

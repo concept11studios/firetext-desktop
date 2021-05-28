@@ -1,7 +1,7 @@
 {
-  "name": "tron-forge",
-  "productName": "FirePitch",
-  "version": "1.0.0",
+  "name": "firetext-client",
+  "productName": "FireTEXT Client",
+  "version": "1.0.1",
   "description": "My Electron application description",
   "main": "src/index.js",
   "scripts": {
@@ -14,7 +14,9 @@
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "executableName": "firetext-client"
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",

@@ -159,11 +159,13 @@ function getPitch() {
         })
       }
       else {
-        select('#result').html(frequency.toFixed(2));
+        
       }
     } else {
-      select('#result').html('No Tone');
+      select('#result').html('No Department Tones');
     }
-    getPitch();
+    setTimeout(() => {
+      getPitch();
+    }, 500)
   })
 }

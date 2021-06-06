@@ -97,6 +97,7 @@ function stoprecording(){
     await sendAudioDispatch(blob)
     triggeredDepartment = null
     triggeredDepartments = []
+    URL.revokeObjectURL(src)
   };
   if (recorder && recorder.state !== 'inactive') {
     recorder.stop();

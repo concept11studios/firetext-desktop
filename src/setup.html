@@ -61,7 +61,6 @@ id = 'input-container'
         }
 
         function addInput(inputValue) {
-            console.log(inputValue)
             let div = document.createElement('div')
             div.style = "display: flex; margin: 4px; flex: 1;"
             div.id = `div${inputs.length}`
@@ -87,11 +86,14 @@ id = 'input-container'
             // get the values of all the inputs
             let referenceToInputs = inputs.map(div => {
                 return Array.from(div.getElementsByTagName('input'))[0]
-            })
+            }).filter(input => input)
+            console.log(referenceToInputs)
 
             let apiKeys = referenceToInputs.map(ref => {
+                console.log(ref)
                 return ref.value
             })
+            console.log(apiKeys)
 
             let queryString = apiKeys.map((token, index) => `apiKeys[${index}]=${token}`).join('&')
 

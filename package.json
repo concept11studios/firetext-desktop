@@ -2,7 +2,7 @@
   "name": "firetext-client",
   "productName": "FireTEXT Client",
   "version": "1.0.1",
-  "description": "My Electron application description",
+  "description": "A package that listens to tones and creates an automatic dispatch on FireTEXT.",
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
@@ -10,7 +10,7 @@
     "make": "electron-forge make"
   },
   "keywords": [],
-  "author": "jeffd23",
+  "author": "Concept 11",
   "license": "MIT",
   "config": {
     "forge": {
@@ -21,7 +21,7 @@
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "tron_forge"
+            "name": "firetext-client"
           }
         },
         {

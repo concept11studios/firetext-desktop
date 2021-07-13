@@ -26,11 +26,6 @@ let triggeredDepartments = []
 getDepartments()
 
 async function getDepartments() {
-  // let getDepartmentsResponse = await axios.get('https://console.firetext.net/api/departments/all', {})
-  // if (getDepartmentsResponse.data.success) {
-  //   departments = getDepartmentsResponse.data.departments
-  // }
-  // console.log({departments})
   let lsDepartments = localStorage.getItem('departments')
 
   if (lsDepartments) {
@@ -106,18 +101,17 @@ function stoprecording(){
 
 async function sendAudioDispatch (blob) {
   let formData = new FormData()
-  const dispatchInformation = {
-    departmentId: triggeredDepartment._id,
-  }
   formData.append('mp3File', blob)
-  formData.append('dispatchInformation', JSON.stringify(dispatchInformation))
-  const config = {
-    params: {
-      type: triggeredDepartment.type === 'All Call' ? 'allCall' : ''
-    }
+  formData.append('dispatchInformation', JSON.stringify({
+    departmentId: triggeredDepartment._id,
+  }))
+
+  try {
+    let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData)
+    console.log({ postDispatchResponse })
+  } catch(err) {
+    console.log(err)
   }
-  let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData, config)
-  console.log({ postDispatchResponse })
 }
 
 function getPitch() {

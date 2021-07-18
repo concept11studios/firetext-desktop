@@ -19,8 +19,6 @@ jobs:
           command: |
             sudo apt-get update -y
             sudo apt-get install -y dpkg fakeroot
-            sudo apt-get install -y wine
-
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
@@ -28,9 +26,6 @@ jobs:
       - run:
           name: Generate Raspberry Pi Build
           command: yarn make --platform=linux --arch=armv7l
-      - run:
-          name: Generate desktop build
-          command: yarn make --platform=win32
 
       - store_artifacts:
           path: ~/repo/out/make

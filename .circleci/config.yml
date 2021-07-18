@@ -15,10 +15,11 @@ jobs:
           name: Install Dependencies
           command: yarn
       - run:
-          name: Install dpkg and fakeroot
+          name: Install dpkg, fakeroot and wine 64
           command: |
             sudo apt-get update -y
             sudo apt-get install -y dpkg fakeroot
+            sudo brew cask install wine-stable
 
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}

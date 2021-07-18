@@ -29,7 +29,7 @@ jobs:
           command: yarn make --platform=linux --arch=armv7l
       - run:
           name: Generate desktop build
-          command: yarn make --platform=win
+          command: yarn make --platform=win32
 
       - store_artifacts:
           path: ~/repo/out/make

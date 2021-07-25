@@ -109,6 +109,7 @@ async function sendAudioDispatch (blob) {
   try {
     let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData)
     console.log({ postDispatchResponse })
+    triggeredDepartments = []
   } catch(err) {
     console.log(err)
   }

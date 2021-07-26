@@ -109,7 +109,6 @@ async function sendAudioDispatch (blob) {
   try {
     let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData)
     console.log({ postDispatchResponse })
-    triggeredDepartments = []
   } catch(err) {
     console.log(err)
   }
@@ -125,8 +124,8 @@ function getPitch() {
         triggeredDepartments = _.filter(departments, (department) => {
           let toneOne = department.tones[0]
           if (toneOne && !triggeredDepartment) {
-            let variance1High = parseFloat(toneOne.value) + parseFloat(toneOne.variance)
-            let variance1Low = parseFloat(toneOne.value) - parseFloat(toneOne.variance)
+            let variance1High = toneOne.value + toneOne.variance
+            let variance1Low = toneOne.value - toneOne.variance
             return (frequency <= variance1High) && (frequency >= variance1Low)
           }
         })
@@ -137,8 +136,8 @@ function getPitch() {
         triggeredDepartments.forEach(triggeredDept => {
           let toneTwo = triggeredDept.tones[1]
           if (toneTwo) {
-            let variance2High = parseFloat(toneTwo.value) + parseFloat(toneTwo.variance)
-            let variance2Low = parseFloat(toneTwo.value) - parseFloat(toneTwo.variance)
+            let variance2High = toneTwo.value + toneTwo.variance
+            let variance2Low = toneTwo.value - toneTwo.variance
             if ((frequency <= variance2High) && (frequency >= variance2Low)) {
               triggeredDepartment = triggeredDept
               select('#result').html(triggeredDepartment.name);
@@ -162,6 +161,6 @@ function getPitch() {
     }
     setTimeout(() => {
       getPitch();
-    }, 500)
+    }, 200)
   })
 }

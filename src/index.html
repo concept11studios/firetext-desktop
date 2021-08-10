@@ -11,7 +11,7 @@
   style="margin: 24px;"
   >
     <div
-    style="display: flex; align-items: center;"
+    style="display: flex; align-items: center; justify-content: center;"
     >
       <img 
       src = './icon.png'
@@ -20,6 +20,7 @@
       <h1>
         FirePITCH
       </h1>   
+      <p style = "margin-left:8px"id="version">Version</p>
       <a style="margin-left: auto;" href = 'setup.html'> Configure </a>
     </div>
     <p id='status'>Loading Model...</p>
@@ -32,3 +33,8 @@
   </div>
 
   <script src="sketch.js"></script>
+  <script>
+    const { version } = require('../package.json')
+    let el = document.getElementById('version').innerHTML = version
+    
+  </script>

@@ -1,6 +1,6 @@
 {
   "name": "firetext-client8.0.0",
-  "productName": "FireTEXT Client",
+  "productName": "firetext-client8.0.0",
   "version": "8.0.0",
   "description": "A package that listens to tones and creates an automatic dispatch on FireTEXT.",
   "main": "src/index.js",

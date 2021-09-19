@@ -117,7 +117,8 @@ async function sendAudioDispatch (blob) {
 function getPitch() {
   pitch.getPitch(function(err, frequency) {
     // should record ensures that the startRecording function is only triggered once.
-    if (frequency && !triggeredDepartment) {
+    if (frequency && frequency > 288 && !triggeredDepartment) {
+      console.log(frequency)
       // step 1, get the triggered department from the first tone that matches the current frequency
       if (triggeredDepartments.length === 0) {
         // set the triggered department as a global variable so it stays as triggered while the listending for the second tone

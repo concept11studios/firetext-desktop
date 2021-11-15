@@ -8,115 +8,62 @@ ml5 Example
 Basic Pitch Detection
 === */
 
+/*** FLOW */
+
+// 1. Detect department by tone
+// 2. Create audioDispatch
+// 3. get dispatchId of newly created dispatch
+// 3. Start Recording
+// 4. sendChunksToDynamoDb
+// 5. after 30 seconds, stop recording
+// 6. patch audioBlob to dispatch
+
+
+
 const axios = require('axios')
-const { v4: uuidv4 } = require('uuid');
 const _ = require('underscore')
 
 const model_url =
-  './model';
+  './model'
 
-let audioContext;
-let mic;
-let pitch;
+/*** INITIALIZATION */
+
+// VARIABLES
 let departments = []
+let audioContext
+let mic
+let pitch
 
 let triggeredDepartment
 let triggeredDepartments = []
 
-getDepartments()
+let recorder = false
+let isRunning = false
 
-async function getDepartments() {
-  let lsDepartments = localStorage.getItem('departments')
+let currentDispatchId 
 
-  if (lsDepartments) {
-    departments = JSON.parse(lsDepartments)
-    console.log(departments)
-  }
-}
-
+// life cycle method from p5.js
 function setup() { 
-  audioContext = new AudioContext();
-  mic = new p5.AudioIn();
-  mic.start(startPitch);
-}
-
-function handleError() {
-  alert('could not connect computer audio')
-}
-
-function startPitch() {
-  pitch = ml5.pitchDetection(model_url, audioContext, mic.stream, modelLoaded);
-}
-
-function modelLoaded() {
-  select('#status').html('Model Loaded');
-  getPitch();
-}
-
-var recorder=false;
-var isRunning = false
-
-function startrecording(){
-  if (!isRunning && triggeredDepartment) {
-    console.log('recording')
-    isRunning = true
-    navigator.getUserMedia({ audio: true, video: false }, (stream) => {
-      recorder = new MediaRecorder(stream)
-      if (recorder.state === 'inactive'){
-        recorder.start();
+  audioContext = new AudioContext()
+  mic = new p5.AudioIn()
+  mic.start(startPitch)
   
-        // currently only records for 10 seconds, refactor this to 30 seconds
-        setTimeout(() => {
-          stoprecording()
-          isRunning = false
-        }, 30000)
-      }
-    }, handleError)
-    
-    // triggers if there is an error getting the audio input
-    function handleError(err) {
-      alert(err)
+  function startPitch() {
+    pitch = ml5.pitchDetection(model_url, audioContext, mic.stream, modelLoaded)
+    function modelLoaded() {
+      select('#status').html('Model Loaded');
+      getPitch();
     }
   }
 }
 
-function stoprecording(){
-  recorder.ondataavailable = async function(event) {
-    recorder = false
-    const chunks = []
-    chunks.push(event.data);
-    let blob = new Blob(chunks)
-    let src = URL.createObjectURL(blob)
-    document.querySelector('#audioFile').src = src
-
-    await sendAudioDispatch(blob)
-    triggeredDepartment = null
-    triggeredDepartments = []
-    URL.revokeObjectURL(src)
-  };
-  if (recorder && recorder.state !== 'inactive') {
-    recorder.stop();
-  }
-}
-
-async function sendAudioDispatch (blob) {
-  let formData = new FormData()
-  formData.append('mp3File', blob)
-  formData.append('dispatchInformation', JSON.stringify({
-    departmentId: triggeredDepartment._id,
-  }))
-
-  try {
-    let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', formData)
-    console.log({ postDispatchResponse })
-  } catch(err) {
-    console.log(err)
-  }
-}
+// MAIN CODE
+getDepartments()
 
 function getPitch() {
+  console.log('GET PITCH CALLED')
   pitch.getPitch(function(err, frequency) {
-    // should record ensures that the startRecording function is only triggered once.
+    // should record ensures that the start Recording function is only triggered once.
     if (frequency && frequency > 288 && !triggeredDepartment) {
       console.log(frequency)
       // step 1, get the triggered department from the first tone that matches the current frequency
@@ -142,15 +89,15 @@ function getPitch() {
             if ((frequency <= variance2High) && (frequency >= variance2Low)) {
               triggeredDepartment = triggeredDept
               select('#result').html(triggeredDepartment.name);
-              startrecording()
+              startRecording()
             }
           } else {
             // start the recording after one tone is detected
             triggeredDepartment = triggeredDepartments.find((dept, index) => {
               return index === 0
             })
-            select('#result').html(triggeredDepartment.name);
-            startrecording()
+            select('#result').html(triggeredDepartment.name)
+            startRecording()
           }
         })
       }
@@ -158,10 +105,185 @@ function getPitch() {
         
       }
     } else {
-      select('#result').html('No Department Tones');
+      select('#result').html('No Department Tones')
     }
-    setTimeout(() => {
-      getPitch();
+    setInterval(() => {
+      if (!isRunning) getPitch()
     }, 200)
   })
+  console.log({triggeredDepartments, triggeredDepartment})
 }
+
+async function startRecording(){
+  if (!isRunning && triggeredDepartment) {
+    currentDispatchId = await createAudioDispatch()
+    try {
+      if (currentDispatchId) {
+        console.log(`recording disptach with id: ${currentDispatchId}`)
+        isRunning = true
+        navigator.getUserMedia({ audio: true, video: false }, (stream) => handleRecording(stream, currentDispatchId), handleError)
+      }
+      else {
+        console.log('failed to create dispatch')
+      }
+    } catch (error) {
+      console.log({'getUserMedia error': error})
+      return
+    }
+  }
+}
+
+function handleRecording (stream, dispatchId) {
+  recorder = new MediaRecorder(stream)
+  
+  let chunks = []
+  let partialChunks = []
+  let chunkNumber = 0
+  
+  if (recorder.state === 'inactive') {
+    // get media chunks after every second 
+    recorder.start(1000)
+    
+    // stop recorder after 30 secs
+    setTimeout(() => {
+      stopRecording()
+    }, 30000)
+
+    // handle chunks of recorded stream
+    recorder.ondataavailable = async function (ev) {
+      chunks.push(ev.data)
+
+      let blob = ev.data
+      let base64 = await blobToBase64(blob)
+      partialChunks.push(base64)
+
+      if (partialChunks.length >= 5) {
+        let chunksPack = partialChunks.slice(0, 5)
+        partialChunks = partialChunks.slice(5)
+                  
+        let item = {
+          dispatchId,
+          "chunkNumber": chunkNumber++,
+          "chunks": chunksPack
+        }
+        
+        sendChunksToDynamoDB(item)
+      }
+    }
+
+    // handle end of recorded stream
+    recorder.onstop = async (ev) => {
+      //send remaining chunks to dynamoDB
+      if (ev.data) {
+        let partialBlob = ev.data
+        let base64 = await blobToBase64(partialBlob)
+        partialChunks.push(base64)
+      }
+
+      let chunksPack = partialChunks
+      let item = {
+        dispatchId,
+        "chunkNumber": chunkNumber,
+        "chunks": chunksPack
+      }
+      sendChunksToDynamoDB(item)
+
+      //patch audio to dispatch
+      let blob = new Blob(chunks)
+      let src = URL.createObjectURL(blob)
+      document.querySelector('#audioFile').src = src
+      await patchAudioFileToDispatch(dispatchId, blob)
+      
+      //cleanup
+      triggeredDepartment = null
+      triggeredDepartments = []
+      currentDispatchId = null
+      partialChunks = []
+      chunkNumber = 0
+      recorder = false
+      URL.revokeObjectURL(src)
+      chunks = []
+      isRunning = false
+    }
+  }
+
+}
+
+function stopRecording() {
+  if (recorder && recorder.state !== 'inactive') {
+    recorder.stop()
+  }
+}
+
+// HELPERS
+
+async function getDepartments() {
+  let lsDepartments = localStorage.getItem('departments')
+
+  if (lsDepartments) {
+    departments = JSON.parse(lsDepartments)
+    console.log(departments)
+  }
+}
+
+async function createAudioDispatch () {
+  try {
+    let postDispatchResponse = await axios.post('https://console.firetext.net/api/dispatches/voice', { departmentId: triggeredDepartment._id })
+    console.log({ postDispatchResponse })
+    return postDispatchResponse?.data?.dispatch?._id
+  } catch(err) {
+    console.log(err)
+    return false
+  }
+}
+
+async function patchAudioFileToDispatch (dispatchId, blob) {
+  let formData = new FormData()
+  formData.append('mp3File', blob)
+
+  try {
+    let audioFilePatchResponse = await axios.patch(`https://console.firetext.net/api/dispatches/voice/${dispatchId}`, formData)
+    console.log({ audioFilePatchResponse })
+  } catch(err) {
+    console.log(err)
+  }
+}
+
+async function sendChunksToDynamoDB (item) {
+  let url = "https://seebv1ux07.execute-api.us-east-1.amazonaws.com/dev"
+
+  let xhr = new XMLHttpRequest()
+  xhr.open("POST", url)
+
+  xhr.setRequestHeader("Accept", "application/json")
+  xhr.setRequestHeader("Content-Type", "application/json")
+
+  xhr.onreadystatechange = function () {
+  if (xhr.readyState === 4) {
+    console.log(xhr.status)
+    console.log(xhr.responseText)
+  }}
+
+
+  xhr.send(JSON.stringify(item))
+  console.log("sending data to api")
+
+}
+
+async function blobToBase64 (blob) {
+    let reader = new FileReader()
+    return new Promise((resolve, reject) => {
+        reader.readAsDataURL(blob)
+        reader.onloadend = function () {
+            let base64String = reader.result
+            console.log({base64StringF: base64String})
+            resolve (base64String)
+        }
+    })
+    
+}
+
+function handleError(err) {
+  alert(err)
+}
+

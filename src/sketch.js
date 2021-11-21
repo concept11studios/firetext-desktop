@@ -52,7 +52,10 @@ function setup() {
     pitch = ml5.pitchDetection(model_url, audioContext, mic.stream, modelLoaded)
     function modelLoaded() {
       select('#status').html('Model Loaded');
-      getPitch();
+      // getPitch();
+      setInterval(() => {
+        if (!isRunning) getPitch()
+      }, 500)
     }
   }
 }
@@ -107,9 +110,6 @@ function getPitch() {
     } else {
       select('#result').html('No Department Tones')
     }
-    setInterval(() => {
-      if (!isRunning) getPitch()
-    }, 200)
   })
   console.log({triggeredDepartments, triggeredDepartment})
 }
@@ -130,6 +130,15 @@ async function startRecording(){
       console.log({'getUserMedia error': error})
       return
     }
+  }
+}
+
+function constructItem (dispatchId, chunkNumber, chunksPack) {
+  return {
+    dispatchId,
+    "chunkNumber": chunkNumber,
+    "chunks": chunksPack,
+    "expiresAt": ((new Date().getTime()/1000|0)+(5*60)) // <- TTL: item is autodeleted after 5 minutes
   }
 }
 
@@ -161,12 +170,7 @@ function handleRecording (stream, dispatchId) {
         let chunksPack = partialChunks.slice(0, 5)
         partialChunks = partialChunks.slice(5)
                   
-        let item = {
-          dispatchId,
-          "chunkNumber": chunkNumber++,
-          "chunks": chunksPack
-        }
-        
+        let item = constructItem(dispatchId, chunkNumber++, chunksPack)
         sendChunksToDynamoDB(item)
       }
     }
@@ -175,35 +179,34 @@ function handleRecording (stream, dispatchId) {
     recorder.onstop = async (ev) => {
       //send remaining chunks to dynamoDB
       if (ev.data) {
+        chunks.push(ev.data)
         let partialBlob = ev.data
         let base64 = await blobToBase64(partialBlob)
         partialChunks.push(base64)
       }
 
       let chunksPack = partialChunks
-      let item = {
-        dispatchId,
-        "chunkNumber": chunkNumber,
-        "chunks": chunksPack
-      }
+      let item = constructItem(dispatchId, chunkNumber, chunksPack)
       sendChunksToDynamoDB(item)
 
-      //patch audio to dispatch
+      //patch audio data prep
       let blob = new Blob(chunks)
       let src = URL.createObjectURL(blob)
       document.querySelector('#audioFile').src = src
-      await patchAudioFileToDispatch(dispatchId, blob)
       
-      //cleanup
+      //cleanup  and start getting pitch again
       triggeredDepartment = null
       triggeredDepartments = []
       currentDispatchId = null
       partialChunks = []
       chunkNumber = 0
       recorder = false
-      URL.revokeObjectURL(src)
       chunks = []
       isRunning = false
+
+      //send the blob to server and free the memory once sent
+      await patchAudioFileToDispatch(dispatchId, blob)
+      URL.revokeObjectURL(src)
     }
   }
 

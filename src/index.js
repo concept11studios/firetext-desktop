@@ -1,5 +1,20 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const AutoLaunch = require('auto-launch')
+
+const autoLauncher = new AutoLaunch({
+  name: 'FirePITCH'
+})
+
+autoLauncher.enable()
+
+autoLauncher.isEnabled().then((isEnabled) => {
+  console.log(isEnabled)
+  if (isEnabled) return
+  autoLauncher.enable()
+}).catch(err => {
+  throw err
+})
 
 const createWindow = () => {
   // Create the browser window.
@@ -7,8 +22,9 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true,
+      devTools: false
     },
-    // icon: __dirname + 'icon.ico'
+    icon: __dirname + 'icon.ico'
   });
 
   mainWindow.maximize()

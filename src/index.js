@@ -24,7 +24,7 @@ const createWindow = () => {
       enableRemoteModule: true,
       devTools: false
     },
-    icon: __dirname + 'icon.ico'
+    icon: __dirname + '/icon.ico'
   });
 
   mainWindow.maximize()

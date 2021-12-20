@@ -1,27 +1,29 @@
 {
-  "name": "firetext-client8.1.0",
-  "productName": "firetext-client8.1.0",
-  "version": "8.1.0",
+  "name": "FirePITCH",
+  "productName": "FirePITCH",
+  "version": "8.1.1",
   "description": "A package that listens to tones and creates an automatic dispatch on FireTEXT.",
+  "author": "FireTEXT",
+  "license": "MIT",
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },
-  "keywords": [],
-  "author": "Concept 11",
-  "license": "MIT",
   "config": {
     "forge": {
       "packagerConfig": {
-        "executableName": "firetext-client8.1.0"
+        "executableName": "FirePITCH",
+        "icon": "src/icon.ico"
       },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "firetext-client8.1.0"
+            "name": "FirePITCH",
+            "iconURL": "src/icon.ico",
+            "setupIcon": "src/icon.ico"
           }
         },
         {

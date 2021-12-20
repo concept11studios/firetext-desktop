@@ -21,8 +21,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     webPreferences: {
       nodeIntegration: true,
-      enableRemoteModule: true,
-      devTools: false
+      enableRemoteModule: true
     },
     icon: __dirname + '/icon.ico'
   });
@@ -31,9 +30,6 @@ const createWindow = () => {
 
   // and load the index.html of the app.
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
 };
 
 // This method will be called when Electron has finished
